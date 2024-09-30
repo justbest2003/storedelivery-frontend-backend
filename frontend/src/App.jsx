@@ -9,35 +9,52 @@ import {
 import "leaflet/dist/leaflet.css";
 import axios from "axios";
 import "./App.css";
+import iconMyLocation from "../src/assets/home-sweet-home.png";
 const base_url = import.meta.env.VITE_API_BASE_URL;
 
 function App() {
   const center = [13.838519421642344, 100.02534292638214]; //SE NPRU
-   const [stores, setStores] = useState([]);
-   const [myLocation, setMyLocation] = useState({lat:"",lng:""})
+  const [stores, setStores] = useState([]);
+  const [myLocation, setMyLocation] = useState({ lat: "", lng: "" });
 
-   useEffect(() => {
-     const fetchStores = async () => {
-       try {
-         const response = await axios.get(base_url+"/api/stores");
-         if(response.status === 200){
-          setStores(response.data); 
-         }
-       } catch (error) {
-         console.error("Error fetching stores:", error);
-       }
-     };
+  const myLocationIcon = L.icon({
+    iconUrl: iconMyLocation, // เปลี่ยนเป็น URL ของไอคอนที่คุณต้องการ
+    iconSize: [30, 30], // ขนาดไอคอน
+  });
 
-     fetchStores();
-   }, []);
+  useEffect(() => {
+    const fetchStores = async () => {
+      try {
+        const response = await axios.get(base_url + "/api/stores");
+        if (response.status === 200) {
+          setStores(response.data);
+        }
+      } catch (error) {
+        console.error("Error fetching stores:", error);
+      }
+    };
 
-   const handleGetLocation = () => {
+    fetchStores();
+  }, []);
+
+  const LocationMap = () => {
+    useMapEvents({
+      click(e) {
+        const { lat, lng } = e.latlng;
+        setMyLocation({ lat, lng });
+        console.log("Clicked at latitue:" + lat + "longitude:" + lng);
+      },
+    });
+  };
+
+  const handleGetLocation = () => {
     navigator.geolocation.getCurrentPosition((position) => {
-      setMyLocation({lat:position.coords.latitude,
-        lng:position.coords.longitude
-      })
-    })
-   }
+      setMyLocation({
+        lat: position.coords.latitude,
+        lng: position.coords.longitude,
+      });
+    });
+  };
   return (
     <>
       <div>
@@ -55,14 +72,15 @@ function App() {
               url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
             />
 
-               {/**Display My Location */}
-            <Marker position={[myLocation.lat, myLocation.lng]}>
-              <Popup>
-               My Current Position
-              </Popup>
+            {/**Display My Location */}
+            <Marker
+              position={[myLocation.lat, myLocation.lng]}
+              icon={myLocationIcon}
+            >
+              <Popup>My Current Position</Popup>
             </Marker>
 
-            {/**{stores.map((store) => (
+            {stores.map((store) => (
               <Marker key={store.id} position={[store.lat, store.lng]}>
                 <Popup>
                   <strong>{store.name}</strong>
@@ -78,7 +96,9 @@ function App() {
                   </a>
                 </Popup>
               </Marker>
-            ))}**/}
+            ))}
+
+            <LocationMap />
           </MapContainer>
         </div>
       </div>
